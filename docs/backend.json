@@ -1,0 +1,355 @@
+{
+  "entities": {
+    "Reminder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reminder",
+      "type": "object",
+      "description": "Represents a reminder with contextual triggers.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Reminder entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Reminder)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the reminder."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the reminder."
+        },
+        "notificationMessage": {
+          "type": "string",
+          "description": "Message to be displayed in the notification."
+        },
+        "icon": {
+          "type": "string",
+          "description": "Optional icon associated with the reminder. Could be a URL or resource identifier."
+        },
+        "vibrationPattern": {
+          "type": "string",
+          "description": "Vibration pattern for the notification."
+        },
+        "priority": {
+          "type": "number",
+          "description": "Priority of the reminder (e.g., 1-5)."
+        },
+        "repeatRules": {
+          "type": "string",
+          "description": "Rules for repeating the reminder. Could be a JSON string or a serialized object."
+        },
+        "triggerIds": {
+          "type": "array",
+          "description": "An array of Trigger objects associated with the reminder.",
+          "items": {
+            "$ref": "#/backend/entities/Trigger"
+          }
+        },
+        "triggerTimestamp": {
+          "type": "string",
+          "description": "The specific date and time for a time-based trigger.",
+          "format": "date-time"
+        },
+        "createdDate": {
+          "type": "string",
+          "description": "Timestamp of when the reminder was created.",
+          "format": "date-time"
+        },
+        "lastModifiedDate": {
+          "type": "string",
+          "description": "Timestamp of when the reminder was last modified.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "title",
+        "notificationMessage",
+        "priority"
+      ]
+    },
+    "Trigger": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Trigger",
+      "type": "object",
+      "description": "Represents a contextual trigger for a reminder.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Trigger entity."
+        },
+        "reminderId": {
+          "type": "string",
+          "description": "Reference to Reminder. (Relationship: Reminder 1:N Trigger)"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of trigger (e.g., location, bluetooth, wifi, time, calendar, weather, device)."
+        },
+        "parameters": {
+          "type": "string",
+          "description": "Parameters for the trigger. Could be a JSON string or a serialized object specific to the trigger type."
+        },
+        "createdDate": {
+          "type": "string",
+          "description": "Timestamp of when the trigger was created.",
+          "format": "date-time"
+        },
+        "lastModifiedDate": {
+          "type": "string",
+          "description": "Timestamp of when the trigger was last modified.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "reminderId",
+        "type",
+        "parameters"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name of the user."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the user's profile photo.",
+          "format": "uri"
+        },
+        "subscriptionStatus": {
+          "type": "string",
+          "description": "Subscription status of the user.",
+          "enum": [
+            "free",
+            "premium"
+          ],
+          "default": "free"
+        },
+        "remindersCount": {
+          "type": "number",
+          "description": "The number of reminders the user has created. Used for freemium limit enforcement."
+        },
+        "createdDate": {
+          "type": "string",
+          "description": "Timestamp of when the user account was created.",
+          "format": "date-time"
+        },
+        "lastLoginDate": {
+          "type": "string",
+          "description": "Timestamp of the user's last login.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "subscriptionStatus",
+        "remindersCount"
+      ]
+    },
+    "AIChatLog": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AIChatLog",
+      "type": "object",
+      "description": "Represents a log of AI chat interactions for reminder creation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AIChatLog entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N AIChatLog)"
+        },
+        "messages": {
+          "type": "array",
+          "description": "Array of chat messages (user and AI).",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": ["user", "assistant"]
+              },
+              "content": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "createdDate": {
+          "type": "string",
+          "description": "Timestamp of when the chat log was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "messages"
+      ]
+    },
+    "UserSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserSettings",
+      "type": "object",
+      "description": "Represents user-specific settings.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserSettings entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 UserSettings)"
+        },
+        "theme": {
+          "type": "string",
+          "description": "User's preferred theme (e.g., light, dark)."
+        },
+        "backupEnabled": {
+          "type": "boolean",
+          "description": "Whether cloud backup is enabled."
+        },
+        "privacySettings": {
+          "type": "string",
+          "description": "Privacy settings of the user. Could be a JSON string or a serialized object."
+        }
+      },
+      "required": [
+        "id",
+        "userId"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous",
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information.  Includes fields like email, display name, photoURL, subscription status, and remindersCount.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/reminders/{reminderId}",
+        "definition": {
+          "entityName": "Reminder",
+          "schema": {
+            "$ref": "#/backend/entities/Reminder"
+          },
+          "description": "Stores reminder data, including title, description, triggers, and notification settings. Uses the `userId` from the parent document, to avoid authorization `get()` calls.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "reminderId",
+              "description": "The unique identifier of the reminder."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/triggers/{triggerId}",
+        "definition": {
+          "entityName": "Trigger",
+          "schema": {
+            "$ref": "#/backend/entities/Trigger"
+          },
+          "description": "Stores trigger information for reminders, including type and parameters. Uses denormalized `reminderId` and `userId` for authorization independence, ensuring triggers can be accessed and managed without fetching parent reminder data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "triggerId",
+              "description": "The unique identifier of the trigger."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/ai_chat_logs/{chatLogId}",
+        "definition": {
+          "entityName": "AIChatLog",
+          "schema": {
+            "$ref": "#/backend/entities/AIChatLog"
+          },
+          "description": "Stores AI chat logs for reminder creation. Uses denormalized `userId` for access control.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "chatLogId",
+              "description": "The unique identifier of the AI chat log."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/user_settings/{settingsId}",
+        "definition": {
+          "entityName": "UserSettings",
+          "schema": {
+            "$ref": "#/backend/entities/UserSettings"
+          },
+          "description": "Stores user-specific settings, such as theme, backup preferences, and privacy settings. Uses denormalized `userId` for access control.  Subscription status can be redundantly stored here (synchronized via cloud functions) for faster rule evaluation in some cases.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "settingsId",
+              "description": "The unique identifier of the user settings.  Should generally be the same as the userId."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the a-priori design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). It leverages denormalization to avoid hierarchical authorization dependencies (`get()` calls), segregates data based on security posture, and employs consistent access modeling using path-based ownership for user-owned data.  \n\n**Authorization Independence:**  The primary strategy is denormalization. For example, if access to triggers depends on the reminder's owner, the `userId` is stored within each trigger document. This eliminates the need for security rules to fetch the parent document, enabling atomic operations and simplifying security rule logic. The freemium model subscription status is stored directly in the User document, and can be optionally be redundantly stored in the UserSettings to ensure authorization is fast and independent.\n\n**Structural Segregation:** Data with different access requirements are stored in separate collections. User-specific data (reminders, triggers, settings, AI chat logs) are stored under `/users/{userId}`. This segregation simplifies security rules and ensures that rules are not used as filters.\n\n**Access Modeling:** User-owned data uses hierarchical paths (e.g., `/users/{userId}/reminders/{reminderId}`). This clearly establishes ownership. For collaborative data (which is not explicitly defined in the requirements, but could be added in the future), a membership map (`members: {uid1: \"role\", uid2: \"role\"}`) would be used and denormalized where necessary.\n\n**QAPs (Rules are not Filters):**  The structure supports secure `list` operations. Because user-owned data is segregated into collections like `/users/{userId}/reminders`, listing reminders is secure as it's scoped to the authenticated user's path.  The authorization data necessary to make access control decisions is present without needing to filter.\n\n**Invariants:** The `userId` field in `Reminder`, `Trigger`, `AIChatLog` and `UserSettings` collections explicitly maintains ownership, ensuring data integrity. Timestamps (`createdDate`, `lastModifiedDate`) are included in each document to track creation and modification times, supporting auditability and potential conflict resolution strategies.  When data is redundantly stored, such as subscription status in UserSettings, Cloud Functions are recommended to maintain consistency."
+  }
+}
+    

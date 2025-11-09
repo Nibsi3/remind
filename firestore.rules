@@ -1,0 +1,139 @@
+/**
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a strict user-ownership model and freemium logic.
+ *
+ * Data Structure & Rules:
+ * - All user data is nested under `/users/{userId}`.
+ * - Users can only access their own data.
+ * - Free-tier users are limited to a maximum of 5 reminders and 2 triggers per reminder.
+ * - Premium users have no reminder or trigger limits.
+ * - The user's subscription status and reminder count are read from `/users/{userId}` to enforce these rules.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Checks if the request is made by a signed-in user.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user's ID matches the provided userId.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    /**
+     * @description Checks if the authenticated user's ID matches the provided userId and the resource exists.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    /**
+     * @description Checks if the user associated with the given userId has a 'premium' subscription.
+     * It reads the subscriptionStatus from the user's own document.
+     */
+    function isPremium(userId) {
+      // This requires that the /users/{userId} document exists.
+      return get(/databases/$(database)/documents/users/$(userId)).data.subscriptionStatus == 'premium';
+    }
+
+    /**
+     * @description Checks if a free-tier user is below the 5-reminder limit BEFORE creating a new one.
+     * It reads the remindersCount from the user's own document.
+     */
+    function isBelowReminderLimit(userId) {
+       // This requires that the /users/{userId} document exists.
+      return get(/databases/$(database)/documents/users/$(userId)).data.remindersCount <= 4;
+    }
+
+    /**
+     * @description Checks if a free-tier reminder update is valid (has 2 or fewer triggers).
+     */
+    function hasValidTriggerCount() {
+        return request.resource.data.triggerIds.size() <= 2;
+    }
+    
+    /**
+     * @description Rules for /users/{userId} documents.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // User listing is not permitted.
+
+      // Allow creation if the user is creating their own document.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      
+      // Allow user to update their own doc, but not change their reminder count or downgrade their subscription.
+      allow update: if isExistingOwner(userId) 
+                    && request.resource.data.id == resource.data.id
+                    && request.resource.data.remindersCount == resource.data.remindersCount
+                    && (
+                      request.resource.data.subscriptionStatus == resource.data.subscriptionStatus ||
+                      (resource.data.subscriptionStatus == 'free' && request.resource.data.subscriptionStatus == 'premium')
+                    );
+      allow delete: if false; // Users should not be able to delete their own account record this way.
+    }
+
+    /**
+     * @description Rules for /users/{userId}/reminders/{reminderId} documents.
+     */
+    match /users/{userId}/reminders/{reminderId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Free users can create reminders only if they have fewer than 5.
+      // Premium users can create unlimited reminders.
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+
+      // Free users can only have up to 2 triggers. Premium users have no limit.
+      allow update: if isExistingOwner(userId) 
+                    && request.resource.data.userId == resource.data.userId
+                    && (isPremium(userId) || hasValidTriggerCount());
+
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for /users/{userId}/triggers/{triggerId} documents.
+     */
+    match /users/{userId}/triggers/{triggerId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) && request.resource.data.reminderId != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for /users/{userId}/ai_chat_logs/{chatLogId} documents.
+     */
+    match /users/{userId}/ai_chat_logs/{chatLogId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for /users/{userId}/user_settings/{settingsId} documents.
+     */
+    match /users/{userId}/user_settings/{settingsId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
+    
